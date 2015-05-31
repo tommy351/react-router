@@ -30,47 +30,60 @@ Transition.prototype.cancel = function () {
 };
 
 Transition.from = function (transition, routes, components, callback) {
-  routes.reduce(function (callback, route, index) {
-    return function (error) {
-      if (error || transition.abortReason) {
-        callback(error);
-      } else if (route.onLeave) {
-        try {
-          route.onLeave(transition, components[index], callback);
+  var promise = Promise.resolve();
 
-          // If there is no callback in the argument list, call it automatically.
-          if (route.onLeave.length < 3)
-            callback();
-        } catch (e) {
-          callback(e);
-        }
-      } else {
-        callback();
+  routes.forEach(function(route, index){
+    if (typeof route.onLeave !== 'function') return;
+
+    promise = promise.then(function(){
+      if (route.onLeave.length < 3){
+        return route.onLeave(transition, components[index]);
       }
-    };
-  }, callback)();
+
+      return new Promise(function(resolve, reject){
+        route.onLeave(transition, components[index], function(err, result){
+          if (err){
+            reject(err);
+          } else {
+            resolve(result);
+          }
+        });
+      });
+    });
+  });
+
+  return promise.then(function(result){
+    callback(null, result);
+  }, callback);
 };
 
 Transition.to = function (transition, routes, params, query, callback) {
-  routes.reduceRight(function (callback, route) {
-    return function (error) {
-      if (error || transition.abortReason) {
-        callback(error);
-      } else if (route.onEnter) {
-        try {
-          route.onEnter(transition, params, query, callback);
+  var promise = Promise.resolve();
+  var reversedRoutes = routes.slice().reverse();
 
-          // If there is no callback in the argument list, call it automatically.
-          if (route.onEnter.length < 4)
-            callback();
-        } catch (e) {
-          callback(e);
-        }
-      } else {
-        callback();
+  reversedRoutes.forEach(function(route){
+    if (typeof route.onEnter !== 'function') return;
+
+    promise = promise.then(function(){
+      if (route.onEnter.length < 4){
+        return route.onEnter(transition, params, query);
       }
-    };
-  }, callback)();
+
+      return new Promise(function(resolve, reject){
+        route.onEnter(transition, params, query, function(err, result){
+          if (err){
+            reject(err);
+          } else {
+            resolve(result);
+          }
+        });
+      });
+    });
+  });
+
+  return promise.then(function(result){
+    callback(null, result);
+  }, callback);
 };
 
 module.exports = Transition;
