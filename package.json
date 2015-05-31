@@ -15,8 +15,7 @@
     "build-website": "babel-node website/scripts/build.js > website/index.html",
     "examples": "webpack-dev-server --config examples/webpack.config.js --content-base examples",
     "prepublish": "npm run build",
-    "test": "jsxhint modules && karma start",
-    "postinstall": "npm run build"
+    "test": "jsxhint modules && karma start"
   },
   "authors": [
     "Ryan Florence",
